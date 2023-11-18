@@ -304,3 +304,437 @@ service isc-dhcp-relay restart
 ```
 
 Script di atas akan mengatur DHCP relay untuk meneruskan requests menuju DHCP server dengan alamat IP `10.40.1.1`, dan juga akan melayani permintaan DHCP dari interface `eth1`, `eth2`, `eth3`, dan `eth4`. Selain itu, script di atas juga mengaktifkan IP forwarding.
+
+## Soal 6
+
+> Pada masing-masing worker PHP, lakukan konfigurasi virtual host untuk website berikut dengan menggunakan php 7.3.
+
+Jalankan script berikut pada masing-masing PHP worker. Sebelumnya, pastikan pada setiap PHP worker sudah terinstall package `wget`, `unzip`, `nginx`, `php7.3`, dan `php7.3-fpm`.
+
+```bash
+mkdir -p /var/www/granz.channel.e07
+
+wget --no-check-certificate 'https://drive.google.com/uc?export=download&id=1ViSkRq7SmwZgdK64eRbr5Fm1EGCTPrU1' -O /var/www/granz.channel.e07.zip
+unzip /var/www/granz.channel.e07.zip -d /var/www/granz.channel.e07
+mv /var/www/granz.channel.e07/modul-3 /var/www/granz.channel.e07
+rm -rf /var/www/granz.channel.e07.zip
+
+echo nameserver 10.40.1.2 > /etc/resolv.conf
+
+echo 'server {
+    listen 80;
+    root /var/www/granz.channel.e07;
+    index index.php index.html index.htm;
+    server_name _;
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    # pass PHP scripts to FastCGI server
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+    }
+    location ~ /\.ht {
+        deny all;
+    }
+    error_log /var/log/nginx/jarkom_error.log;
+    access_log /var/log/nginx/jarkom_access.log;
+}' > /etc/nginx/sites-available/granz.channel.e07
+
+echo '<!DOCTYPE html>
+<html>
+<head>
+    <title>Granz Channel Map</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Granz Channel</h1>
+        <p><?php
+            $hostname = gethostname();
+            echo "Request ini dihandle oleh: $hostname<br>"; ?> </p>
+        <p>Enter your name to validate:</p>
+        <form method="POST" action="index.php">
+            <input type="text" name="name" id="nameInput">
+            <button type="submit" id="submitButton">Submit</button>
+        </form>
+        <p id="greeting"><?php
+            if(isset($_POST['name'])) {
+                $name = $_POST['name'];
+                echo "Hello, $name!";
+            }
+        ?></p>
+    </div>
+    <script src="js/script.js"></script>
+</body>' > /var/www/granz.channel.e07/index.php
+
+ln -s /etc/nginx/sites-available/granz.channel.e07 /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+
+service php7.3-fpm restart
+service nginx restart
+nginx -t
+```
+
+Script di atas akan mengunduh repository dari link yang disediakan, dan akan melakukan ekstraksi (unzip).
+```bash
+wget --no-check-certificate 'https://drive.google.com/uc?export=download&id=1ViSkRq7SmwZgdK64eRbr5Fm1EGCTPrU1' -O /var/www/granz.channel.e07.zip
+unzip /var/www/granz.channel.e07.zip -d /var/www/granz.channel.e07
+mv /var/www/granz.channel.e07/modul-3 /var/www/granz.channel.e07
+rm -rf /var/www/granz.channel.e07.zip
+```
+
+Setelah mengunduh repositori dan melakukan ekstraksi, kita akan melakukan beberapa konfigurasi pada `nginx` sebagai berikut.
+
+```bash
+echo 'server {
+    listen 80;
+    root /var/www/granz.channel.e07;
+    index index.php index.html index.htm;
+    server_name _;
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+    }
+    location ~ /\.ht {
+        deny all;
+    }
+    error_log /var/log/nginx/jarkom_error.log;
+    access_log /var/log/nginx/jarkom_access.log;
+}' > /etc/nginx/sites-available/granz.channel.e07
+
+ln -s /etc/nginx/sites-available/granz.channel.e07 /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+```
+
+Selanjutnya, kita akan sedikit mengedit file `index.php` dalam repositori sebelumnya sesuai ketentuan sebagai berikut.
+
+```bash
+echo '<!DOCTYPE html>
+<html>
+<head>
+    <title>Granz Channel Map</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Granz Channel</h1>
+        <p><?php
+            $hostname = gethostname();
+            echo "Request ini dihandle oleh: $hostname<br>"; ?> </p>
+        <p>Enter your name to validate:</p>
+        <form method="POST" action="index.php">
+            <input type="text" name="name" id="nameInput">
+            <button type="submit" id="submitButton">Submit</button>
+        </form>
+        <p id="greeting"><?php
+            if(isset($_POST['name'])) {
+                $name = $_POST['name'];
+                echo "Hello, $name!";
+            }
+        ?></p>
+    </div>
+    <script src="js/script.js"></script>
+</body>' > /var/www/granz.channel.e07/index.php
+```
+
+## Soal 7
+
+> Kepala suku dari Bredt Region memberikan resource server sebagai berikut:
+
+> 1. Lawine, 4GB, 2vCPU, dan 80 GB SSD.
+> 2. Linie, 2GB, 2vCPU, dan 50 GB SSD.
+> 3. Lugner 1GB, 1vCPU, dan 25 GB SSD.  
+
+> Aturlah agar Eisen dapat bekerja dengan maksimal, lalu lakukan testing dengan 1000 request dan 100 request/second.
+
+Pertama, arahkan domain pada DNS Server agar menuju IP dari Eisen sebagai Load Balancer, atau jalankan script berikut pada node Heiter.
+
+```bash
+echo ';
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     riegel.canyon.e07.com. root.riegel.canyon.e07.com. (
+                        2023111301      ; Serial
+                        604800          ; Refresh
+                        86400           ; Retry
+                        2419200         ; Expire
+                        604800 )        ; Negative Cache TTL
+;
+@               IN      NS      riegel.canyon.e07.com.
+@               IN      A       10.40.2.2' > /etc/bind/jarkom/riegel.canyon.e07.com
+
+echo ';
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     granz.channel.e07.com.  root.granz.channel.e07.com.  (
+                        2023111301      ; Serial
+                        604800          ; Refresh
+                        86400           ; Retry
+                        2419200         ; Expire
+                        604800 )        ; Negative Cache TTL
+;
+@               IN      NS      granz.channel.e07.com.
+@               IN      A       10.40.2.2' > /etc/bind/jarkom/granz.channel.e07.com
+```
+Domain yang sebelumnya mengarah ke worker, sekarang sudah mengarah ke IP Load Balancer. Selanjutnya, kita akan melakukan konfigurasi `nginx` pada node Load Balancer sebagai berikut. Tentu saja pastikan juga bahwa sudah terinstall package `nginx` di Load Balancer.
+```bash
+echo 'upstream myweb  {
+    server 10.40.3.1 weight=128; 
+    server 10.40.3.2 weight=40;
+    server 10.40.3.3 weight=5;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+    }
+}' > /etc/nginx/sites-available/lb-jarkom
+
+ln -s /etc/nginx/sites-available/lb-jarkom /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+
+service nginx restart
+```
+Berdasarkan ilustrasi soal, kami menyimpulkan bahwa algoritma load-balancing yang digunakan dalam soal ini adalah algoritma Weighted Round-robin. Hal tersebut dikarenakan setiap server yang digunakan memiliki spesifikasi yang berbeda-beda. Dalam hal ini, kami memberikan weight pada tiap servernya dengan acuan komparasi hasil perkalian resource setiap servernya, hingga diperoleh hasil akhir yang paling sederhana yaitu 128 : 40 : 5.
+```bash
+upstream myweb  {
+    server 10.40.3.1 weight=128; 
+    server 10.40.3.2 weight=40;
+    server 10.40.3.3 weight=5;
+}
+```
+Kemudian, lakukan benchmarking menggunakan `apache2-utils` pada sembarang node client. Pastikan juga bahwa package tersebut sudah terinstall. Jalankan perintah berikut pada salah satu client.  
+```bash
+ab -n 1000 -c 100 http://www.granz.channel.e07.com/
+```
+
+## Soal 8
+
+> Karena diminta untuk menuliskan grimoire, buatlah analisis hasil testing dengan 200 request dan 10 request/second masing-masing algoritma Load Balancer dengan ketentuan sebagai berikut:
+> 1. Nama Algoritma Load Balancer
+> 2. Report hasil testing pada Apache Benchmark
+> 3. Grafik request per second untuk masing masing algoritma. 
+> 4. Analisis
+
+Berikut adalah script yang perlu dijalankan pada node Load Balancer untuk melakukan testing masing-masing algoritma.
+
+1. Algoritma Round-robin  
+```bash
+echo 'upstream myweb  {
+    server 10.40.3.1;
+    server 10.40.3.2;
+    server 10.40.3.3;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+    }
+}' > /etc/nginx/sites-available/lb-jarkom
+
+ln -s /etc/nginx/sites-available/lb-jarkom /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+
+service nginx restart
+```
+2. Algoritma Weighted Round-robin
+```bash
+echo 'upstream myweb  {
+    server 10.40.3.1 weight=128;
+    server 10.40.3.2 weight=40;
+    server 10.40.3.3 weight=5;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+    }
+}' > /etc/nginx/sites-available/lb-jarkom
+
+ln -s /etc/nginx/sites-available/lb-jarkom /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+
+service nginx restart
+```
+3. Algoritma Least Connection
+```bash
+echo 'upstream myweb  {
+    least_conn;
+    server 10.40.3.1;
+    server 10.40.3.2;
+    server 10.40.3.3;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+        proxy_set_header    X-Real-IP $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    Host $http_host;
+    }
+}' > /etc/nginx/sites-available/lb-jarkom
+
+ln -s /etc/nginx/sites-available/lb-jarkom /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+
+service nginx restart
+```
+4. Algoritma IP Hash
+```bash
+echo 'upstream myweb  {
+    least_conn;
+    server 10.40.3.1 weight=4; # IP Lugner
+    server 10.40.3.2 weight=2; # IP Linie
+    server 10.40.3.3 weight=1; # IP Lawine
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+        proxy_set_header    X-Real-IP $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    Host $http_host;
+    }
+}' > /etc/nginx/sites-available/lb-jarkom
+
+ln -s /etc/nginx/sites-available/lb-jarkom /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+
+service nginx restart
+```
+5. Algoritma Generic Hash
+```bash
+echo 'upstream myweb  {
+    hash $request_uri consistent;
+    server 10.40.3.1;
+    server 10.40.3.2;
+    server 10.40.3.3;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+        proxy_set_header    X-Real-IP $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    Host $http_host;
+    }
+}' > /etc/nginx/sites-available/lb-jarkom
+
+ln -s /etc/nginx/sites-available/lb-jarkom /etc/nginx/sites-enabled
+rm -rf /etc/nginx/sites-enabled/default
+
+service nginx restart
+```
+Setelahnya, lakukan benchmarking seperti biasa pada sembarang node client menggunakan `apache2-utils` dan juga `htop` pada masing-masing PHP Worker.
+
+Hasil benchmarking (Grimoire) dari kelompok kami dapat dilihat di link [berikut](https://docs.google.com/document/d/1SQJ5kGBgmNA37KcT3MGDfBn2mwxk-3DGQwyrWkb0qsY/edit?usp=sharing).
+
+## Soal 9
+
+> Dengan menggunakan algoritma Round Robin, lakukan testing dengan menggunakan 3 worker, 2 worker, dan 1 worker sebanyak 100 request dengan 10 request/second, kemudian tambahkan grafiknya pada grimoire.
+
+Caranya serupa dengan [Soal 8](#soal-8), hanya saja pada benchmarking kali ini kita akan melakukannya dalam 3 kondisi, yakni saat menggunakan 3 worker, 2 worker, dan 1 worker. Oleh karena itu, kita perlu mengubah jumlah worker yang digunakan dengan mengedit konfigurasi pada file `/etc/nginx/sites-available/lb-jarkom` di node Load Balancer.
+1. 3 Worker
+```bash
+upstream myweb  {
+    server 10.40.3.1;
+    server 10.40.3.2;
+    server 10.40.3.3;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+    }
+}
+```
+2. 2 Worker
+```bash
+upstream myweb  {
+    server 10.40.3.1;
+    server 10.40.3.2;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+    }
+}
+```
+3. 1 Worker
+```bash
+upstream myweb  {
+    server 10.40.3.1;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    location / {
+        proxy_pass http://myweb;
+    }
+}
+```
+Setelahnya, lakukan benchmarking seperti biasa pada sembarang node client menggunakan `apache2-utils` dan juga `htop` pada masing-masing PHP Worker.
+
+Hasil benchmarking (Grimoire) dari kelompok kami dapat dilihat di link [berikut](https://docs.google.com/document/d/1SQJ5kGBgmNA37KcT3MGDfBn2mwxk-3DGQwyrWkb0qsY/edit?usp=sharing).
+
+## Soal 10
+
+> Selanjutnya coba tambahkan konfigurasi autentikasi di LB dengan dengan kombinasi username: “netics” dan password: “ajkyyy”, dengan yyy merupakan kode kelompok. Terakhir simpan file “htpasswd” nya di /etc/nginx/rahasisakita/
+
+Untuk menambahkan konfigurasi autentikasi, jalankan script di bawah pada node Load Balancer.
+
+```bash
+echo 'upstream granz.channel.e07.com  {
+    server 10.40.3.1;
+    server 10.40.3.2;
+    server 10.40.3.3;
+}
+
+server {
+    listen 80;
+    server_name granz.channel.e07.com;
+    
+    location / {
+        proxy_pass http://granz.channel.e07.com;
+        proxy_set_header    X-Real-IP $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header    Host $http_host;
+
+        auth_basic "Administrators Area";
+        auth_basic_user_file /etc/nginx/rahasiakita;
+    }
+
+    location ~ /\.ht {
+            deny all;
+    }
+
+    error_log /var/log/nginx/lb_error.log;
+    access_log /var/log/nginx/lb_access.log;
+}' > /etc/nginx/sites-available/lb-jarkom
+
+htpasswd -c -b /etc/nginx/rahasiakita netics ajke07
+```
