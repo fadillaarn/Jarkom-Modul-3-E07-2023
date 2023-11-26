@@ -738,3 +738,233 @@ server {
 
 htpasswd -c -b /etc/nginx/rahasiakita netics ajke07
 ```
+
+## Soal 11
+Lalu buat untuk setiap request yang mengandung /its akan di proxy passing menuju halaman https://www.its.ac.id
+
+Edit konfigurasi pada Load Balancer
+```bash
+upstream webserver  {
+        server 10.40.3.1;
+        server 10.40.3.2;
+        server 10.40.3.3;
+ }
+
+ server {
+        listen 80;
+        server_name granz.channel.e07.com;
+
+        location / {
+                proxy_pass http://webserver;
+                auth_basic "Administrator's Area";
+                auth_basic_user_file /etc/nginx/rahasiakita/.htpasswd;
+        }
+        location ~* /its {
+                proxy_pass https://www.its.ac.id;
+        }
+
+
+
+        location ~ /\.ht {
+                deny all;
+        }
+ }
+```
+
+Sehingga ketika di lakukan testing pada client dengan command 'lynx granz.channel.e07.com/its' akan menjadi seperti dibawah :
+<img width="761" alt="Screenshot 2023-11-21 at 11 33 50" src="https://github.com/fadillaarn/Jarkom-Modul-3-E07-2023/assets/91003946/b6f96985-c773-46bc-aa3f-b2be26990333">
+
+## Soal 12
+Selanjutnya LB ini hanya boleh diakses oleh client dengan IP [Prefix IP].3.69, [Prefix IP].3.70, [Prefix IP].4.167, dan [Prefix IP].4.168.
+
+Edit konfigurasi pada Load Balancer
+```bash
+upstream webserver  {
+        server 10.40.3.1;
+        server 10.40.3.2;
+        server 10.40.3.3;
+ }
+
+ server {
+        listen 80;
+        server_name granz.channel.e07.com;
+
+        location / {
+                proxy_pass http://webserver;
+                auth_basic "Administrator's Area";
+                auth_basic_user_file /etc/nginx/rahasiakita/.htpasswd;
+
+allow 10.45.3.69;
+	allow 10.40.3.70;
+	allow 10.40.3.167;
+	allow 10.40.3.168;	
+	deny all;
+        }
+        location ~* /its {
+                proxy_pass https://www.its.ac.id;
+	allow all;
+        }
+        location ~ /\.ht {
+                deny all;
+        }
+ }
+```
+
+Sehingga outputnya akan menjadi seperti ini:
+<img width="429" alt="Screenshot 2023-11-21 at 11 34 49" src="https://github.com/fadillaarn/Jarkom-Modul-3-E07-2023/assets/91003946/d32a010d-fa6c-4248-9e56-d788dc00fba7">
+
+## Soal 13
+Semua data yang diperlukan, diatur pada Denken dan harus dapat diakses oleh Frieren, Flamme, dan Fern
+
+Pada Database Server, didalam .bashrc berisi script dibawah ini:
+```bash
+echo nameserver 192.168.122.1  > /etc/resolv.conf
+apt-get update
+apt-get install mariadb-server -y
+```
+
+Kemudian lakukan penambahan user didalam mysql. Untuk masuk pertama kali dapat menggunakan syntax mysql seperti gambar dibawah:
+<img width="644" alt="Screenshot 2023-11-21 at 11 35 12" src="https://github.com/fadillaarn/Jarkom-Modul-3-E07-2023/assets/91003946/941d6a72-ab7b-4fea-b491-4a853ae22dde">
+
+<img width="346" alt="Screenshot 2023-11-21 at 11 37 12" src="https://github.com/fadillaarn/Jarkom-Modul-3-E07-2023/assets/91003946/f28aa386-612e-4016-a290-d08e17c1d597">
+
+<img width="791" alt="Screenshot 2023-11-21 at 12 19 48" src="https://github.com/fadillaarn/Jarkom-Modul-3-E07-2023/assets/91003946/75031fc3-54ee-46c7-a92a-ec3aa20f7810">
+
+## Soal 14
+Frieren, Flamme, dan Fern memiliki Riegel Channel sesuai dengan quest guide berikut. Jangan lupa melakukan instalasi PHP8.0 dan Composer
+
+lakukan setup
+```bash
+apt-get update
+apt install nginx php php-fpm -y
+apt-get install wget
+apt-get install unzip
+wget --no-check-certificate 'https://drive.usercontent.google.com/download?id=1ViSkRq7SmwZgdK64eRbr5Fm1EGCTPrU1&export=download&authuser=0&confirm=t&uuid=0e499712-8150-42d4-a474-b29dfb026ab6&at=APZUnTVBse4ducwDDntmAkLSWB1_:1699949521984' -O  riegel.canyon.e07.com
+unzip riegel.canyon.e07.com
+cp -r modul-3/ /var/www
+rm -r modul-3
+cp jarkom /etc/nginx/sites-available/
+ln -s /etc/nginx/sites-available/jarkom /etc/nginx/sites-enabled
+rm -r /etc/nginx/sites-enabled/default
+service nginx reload
+service nginx restart
+service php7.3-fpm start
+service php7.3-fpm status
+```
+Berikut adalah contoh apabila laravel sudah sukses dijalankan:
+<img width="822" alt="Screenshot 2023-11-26 at 14 18 28" src="https://github.com/fadillaarn/Jarkom-Modul-3-E07-2023/assets/91003946/9a863e59-425d-4dc0-bbe0-426da75cd60b">
+
+## Soal 15, 16 dan 17
+Riegel Channel memiliki beberapa endpoint yang harus ditesting sebanyak 100 request dengan 10 request/second. Tambahkan response dan hasil testing pada grimoire.
+POST /auth/register (15)
+POST /auth/login (16)
+GET /me (17)
+
+Lakukan testing pada terminal client dengan perintah sebagai berikut:
+```bash
+ab -n 100 -c 10 -T 'application/json' -p register3_data.json -g register3_results.data http://10.40.4.1:8001/api/auth/register
+```
+
+maka outputnya akan seperti berikut:
+<img width="922" alt="Screenshot 2023-11-26 at 14 22 11" src="https://github.com/fadillaarn/Jarkom-Modul-3-E07-2023/assets/91003946/442ea6c0-8185-42ff-b0d8-55f5beb5803e">
+
+## Soal 18
+Untuk memastikan ketiganya bekerja sama secara adil untuk mengatur Riegel Channel maka implementasikan Proxy Bind pada Eisen untuk mengaitkan IP dari Frieren, Flamme, dan Fern
+
+Tambahkan konfigurasi berikut pada Load Balancer
+```bash
+upstream mynode  {
+        least_conn;
+        server 10.40.4.1:8001;
+        server 10.40.4.2:8002;
+        server 10.40.4.3:8003;
+ }
+
+ server {
+        listen 80;
+        server_name riegel.canyon.e07.com;
+
+        location / {
+        proxy_bind 10.40.2.2;
+        proxy_pass http://mynode;
+        }
+ }
+```
+
+## Soal 19
+Untuk meningkatkan performa dari Worker, coba implementasikan PHP-FPM pada Frieren, Flamme, dan Fern. Untuk testing kinerja naikkan 
+- pm.max_children
+- pm.start_servers
+- pm.min_spare_servers
+- pm.max_spare_servers
+sebanyak tiga percobaan dan lakukan testing sebanyak 100 request dengan 10 request/second kemudian berikan hasil analisisnya pada Grimoire.
+
+cp template ke root menggunakan root dibawah
+```bash
+cp /etc/php/8.0/fpm/pool.d/www.conf ./
+```
+
+script:
+```bash
+Template1 diganti: 
+; Start a new pool named 'www'.
+; the variable $pool can be used in any directive and will be replaced by the
+; pool name ('www' here)
+
+[www]
+
+user = www-data
+group = www-data
+listen = /run/php/php8.0-fpm.sock
+listen.owner = www-data
+listen.group = www-data
+php_admin_value[disable_functions] = exec,passthru,shell_exec,system
+php_admin_flag[allow_url_fopen] = off
+
+; Choose how the process manager will control the number of child processes.
+
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2 
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3 
+
+; Per pool prefix
+; It only applies on the following directives:
+; - 'access.log'
+; - 'slowlog'
+; - 'listen' (unixsocket)
+; - 'chroot'
+; - 'chdir'
+; - 'php_values'
+
+cp template1 /etc/php/8.0/fpm/pool.d/www.conf
+service php8.0-fpm restart
+```
+untuk melakukan testing gunakan command dibawah:
+```bash
+ab -n 100 -c 10 -T 'application/json' -p register3_data.json -g register3_results.data http://riegel.canyon.e07.com/api/auth/register
+```
+
+## Soal 20
+Nampaknya hanya menggunakan PHP-FPM tidak cukup untuk meningkatkan performa dari worker maka implementasikan Least-Conn pada Eisen. Untuk testing kinerja dari worker tersebut dilakukan sebanyak 100 request dengan 10 request/second
+
+Menambahkan algoritma least_conn; pada kongfigurasi nginx di load-balancer untuk laravel seperti berikut:
+```bash
+upstream mynode  {
+        least_conn;
+        server 10.40.4.1:8001;
+        server 10.40.4.2:8002;
+        server 10.40.4.3:8003;
+ }
+
+ server {
+        listen 80;
+        server_name riegel.canyon.e07.com;
+
+        location / {
+        proxy_bind 10.40.2.2;
+        proxy_pass http://mynode;
+        }
+ }
+```
